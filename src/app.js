@@ -1,10 +1,12 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const path = require("path");
 const taskRoutes = require("./routes/taskRoutes");
 require("dotenv").config();
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/tasks", taskRoutes);
 
 async function main() {
@@ -20,7 +22,7 @@ main()
   });
 
 app.get("/", (req, res) => {
-  res.send("Hi I am root");
+  res.sendFile(path.join(__dirname, "../frontend/index.html"));
 });
 
 app.listen(process.env.PORT, () => {

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Listify</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div class="topbar">
+        <div>
+          <h1>Listify</h1>
+          <p class="subtitle">Focus on what matters.</p>
+        </div>
+
+        <div class="task-counter">
+          <span id="taskCount">0 active</span>
+        </div>
+      </div>
+
+      <section class="tasks-section">
+        <div class="task-list" id="taskList"></div>
+      </section>
+
+      <button
+        class="fab"
+        id="openModalBtn"
+        type="button"
+        aria-label="Create task"
+      >
+        +
+      </button>
+    </main>
+
+    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <button
+          class="icon-button modal__close"
+          id="closeModalBtn"
+          type="button"
+        >
+          ×
+        </button>
+
+        <h2 id="modalTitle">New task</h2>
+
+        <form id="taskForm" class="task-form">
+          <input
+            id="titleInput"
+            type="text"
+            placeholder="Task title"
+            maxlength="90"
+            required
+          />
+
+          <textarea
+            id="descriptionInput"
+            rows="4"
+            maxlength="320"
+            placeholder="Description (optional)"
+          ></textarea>
+
+          <button class="confirm-button" type="submit">Save</button>
+        </form>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
