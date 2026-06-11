@@ -1,85 +1,58 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Listify</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listify | Task Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-glow"></div>
+    
+    <main class="container">
+        <header class="header">
+            <h1 class="brand">Listify</h1>
+            <p class="subtitle">Focus on what matters.</p>
+        </header>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <main class="shell">
-      <div class="topbar">
-        <div>
-          <h1>Listify</h1>
-          <p class="subtitle">Focus on what matters.</p>
-        </div>
-
-        <div class="task-counter">
-          <span id="taskCount">0 active</span>
-        </div>
-      </div>
-
-      <section class="tasks-section">
-        <div class="task-list" id="taskList"></div>
-      </section>
-
-      <button
-        class="fab"
-        id="openModalBtn"
-        type="button"
-        aria-label="Create task"
-      >
-        +
-      </button>
+        <section class="task-section">
+            <div id="task-list" class="task-list">
+                <!-- Tasks will be injected here -->
+                <div class="loader">
+                    <div class="shimmer"></div>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
-      <section
-        class="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modalTitle"
-      >
-        <button
-          class="icon-button modal__close"
-          id="closeModalBtn"
-          type="button"
-        >
-          ×
-        </button>
+    <!-- Floating Action Button -->
+    <button id="open-modal" class="fab" aria-label="Add Task">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
 
-        <h2 id="modalTitle">New task</h2>
-
-        <form id="taskForm" class="task-form">
-          <input
-            id="titleInput"
-            type="text"
-            placeholder="Task title"
-            maxlength="90"
-            required
-          />
-
-          <textarea
-            id="descriptionInput"
-            rows="4"
-            maxlength="320"
-            placeholder="Description (optional)"
-          ></textarea>
-
-          <button class="confirm-button" type="submit">Save</button>
-        </form>
-      </section>
+    <!-- Task Modal -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-content glass">
+            <h2 id="modal-title">Create New Task</h2>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="input-group">
+                    <input type="text" id="title" placeholder="What needs to be done?" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <textarea id="description" placeholder="Add some details..." rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="close-modal" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="script.js"></script>
-  </body>
+</body>
 </html>

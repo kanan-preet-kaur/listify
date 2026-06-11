@@ -1,238 +1,169 @@
-const API_URL =
-  window.LISTIFY_API_URL ||
-  (window.location.protocol === "file:" ? "http://localhost:8080/tasks" : "/tasks");
-
-const taskList = document.querySelector("#taskList");
-const taskCount = document.querySelector("#taskCount");
-const modalBackdrop = document.querySelector("#modalBackdrop");
-const openModalBtn = document.querySelector("#openModalBtn");
-const closeModalBtn = document.querySelector("#closeModalBtn");
-const taskForm = document.querySelector("#taskForm");
-const titleInput = document.querySelector("#titleInput");
-const descriptionInput = document.querySelector("#descriptionInput");
-const modalTitle = document.querySelector("#modalTitle");
+const taskList = document.getElementById('task-list');
+const taskForm = document.getElementById('task-form');
+const modalOverlay = document.getElementById('modal-overlay');
+const openModalBtn = document.getElementById('open-modal');
+const closeModalBtn = document.getElementById('close-modal');
+const modalTitle = document.getElementById('modal-title');
 
 let tasks = [];
-let editingTaskId = null;
 
-const icons = {
-  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>',
-  edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
-};
+// Initialize
+document.addEventListener('DOMContentLoaded', fetchTasks);
 
-function escapeHtml(value = "") {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+// Fetch all tasks
+async function fetchTasks() {
+    try {
+        const response = await fetch('/tasks');
+        const data = await response.json();
+        tasks = data.tasks || [];
+        renderTasks();
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        taskList.innerHTML = '<p class="error">Failed to load tasks. Please try again.</p>';
+    }
 }
 
-function formatDate(value) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
-
-async function request(path = "", options = {}) {
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed");
-  }
-
-  return data;
-}
-
-function sortTasks(items) {
-  return [...items].sort((a, b) => {
-    if (a.completed !== b.completed) return Number(a.completed) - Number(b.completed);
-    return new Date(b.createdAt) - new Date(a.createdAt);
-  });
-}
-
-function updateCount() {
-  const active = tasks.filter((task) => !task.completed).length;
-  taskCount.textContent = `${active} active`;
-}
-
+// Render tasks to the UI
 function renderTasks() {
-  updateCount();
+    if (tasks.length === 0) {
+        taskList.innerHTML = `
+            <div class="empty-state">
+                <p>No tasks yet. Start by creating one!</p>
+            </div>
+        `;
+        return;
+    }
 
-  if (!tasks.length) {
-    taskList.innerHTML = '<p class="empty-state">No tasks yet.</p>';
-    return;
-  }
-
-  taskList.innerHTML = sortTasks(tasks)
-    .map((task) => {
-      const description = task.description
-        ? `<p class="task-description">${escapeHtml(task.description)}</p>`
-        : "";
-
-      return `
-        <article class="task-card ${task.completed ? "is-completed" : ""}" data-id="${task._id}">
-          <button
-            class="check-button ${task.completed ? "is-checked" : ""}"
-            type="button"
-            aria-label="${task.completed ? "Mark task active" : "Mark task completed"}"
-            data-action="toggle"
-          >
-            ${icons.check}
-          </button>
-
-          <div class="task-card__content">
-            <h3 class="task-title">${escapeHtml(task.title)}</h3>
-            ${description}
-            <time class="task-date" datetime="${task.createdAt}">${formatDate(task.createdAt)}</time>
-          </div>
-
-          <div class="task-actions">
-            <button class="icon-button" type="button" aria-label="Edit task" data-action="edit">
-              ${icons.edit}
-            </button>
-            <button class="icon-button icon-button--danger" type="button" aria-label="Delete task" data-action="delete">
-              ${icons.trash}
-            </button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+    taskList.innerHTML = tasks.map(task => `
+        <div class="task-card ${task.completed ? 'completed' : ''}" data-id="${task._id}">
+            <div class="checkbox-wrapper" onclick="toggleTask('${task._id}', ${task.completed})">
+                <div class="custom-checkbox ${task.completed ? 'checked' : ''}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+            <div class="task-content">
+                <h3 class="task-title">${task.title}</h3>
+                ${task.description ? `<p class="task-desc">${task.description}</p>` : ''}
+            </div>
+            <div class="task-actions">
+                <button class="action-btn" onclick="editTask('${task._id}')" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="action-btn delete" onclick="deleteTask('${task._id}')" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                </button>
+            </div>
+        </div>
+    `).join('');
 }
 
-async function loadTasks() {
-  taskList.innerHTML = '<p class="loading-state">Loading tasks...</p>';
-
-  try {
-    const data = await request();
-    tasks = data.tasks || [];
-    renderTasks();
-  } catch (error) {
-    taskList.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
-  }
-}
-
-function openModal(task = null) {
-  editingTaskId = task?._id || null;
-  modalTitle.textContent = editingTaskId ? "Edit task" : "New task";
-  titleInput.value = task?.title || "";
-  descriptionInput.value = task?.description || "";
-  modalBackdrop.classList.add("is-open");
-  modalBackdrop.setAttribute("aria-hidden", "false");
-  window.setTimeout(() => titleInput.focus(), 120);
-}
-
-function closeModal() {
-  modalBackdrop.classList.remove("is-open");
-  modalBackdrop.setAttribute("aria-hidden", "true");
-  taskForm.reset();
-  editingTaskId = null;
-  openModalBtn.focus();
-}
-
-async function saveTask(event) {
-  event.preventDefault();
-
-  const payload = {
-    title: titleInput.value.trim(),
-    description: descriptionInput.value.trim()
-  };
-
-  if (!payload.title) {
-    titleInput.focus();
-    return;
-  }
-
-  const existingTask = tasks.find((task) => task._id === editingTaskId);
-  const options = {
-    method: editingTaskId ? "PUT" : "POST",
-    body: JSON.stringify({
-      ...payload,
-      completed: existingTask?.completed || false
-    })
-  };
-
-  const data = await request(editingTaskId ? `/${editingTaskId}` : "", options);
-
-  if (editingTaskId) {
-    tasks = tasks.map((task) => (task._id === editingTaskId ? data.task : task));
-  } else {
-    tasks = [data.task, ...tasks];
-  }
-
-  closeModal();
-  renderTasks();
-}
-
-async function toggleTask(taskId) {
-  const task = tasks.find((item) => item._id === taskId);
-  if (!task) return;
-
-  const nextTask = { ...task, completed: !task.completed };
-  tasks = tasks.map((item) => (item._id === taskId ? nextTask : item));
-  renderTasks();
-
-  try {
-    const data = await request(`/${taskId}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        title: task.title,
-        description: task.description || "",
-        completed: nextTask.completed
-      })
-    });
-    tasks = tasks.map((item) => (item._id === taskId ? data.task : item));
-    renderTasks();
-  } catch (error) {
-    tasks = tasks.map((item) => (item._id === taskId ? task : item));
-    renderTasks();
-  }
-}
-
-async function deleteTask(taskId) {
-  const card = taskList.querySelector(`[data-id="${taskId}"]`);
-  card?.classList.add("is-removing");
-  await new Promise((resolve) => window.setTimeout(resolve, 220));
-  await request(`/${taskId}`, { method: "DELETE" });
-  tasks = tasks.filter((task) => task._id !== taskId);
-  renderTasks();
-}
-
-taskList.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action]");
-  const card = event.target.closest(".task-card");
-
-  if (!button || !card) return;
-
-  const taskId = card.dataset.id;
-  const task = tasks.find((item) => item._id === taskId);
-
-  if (button.dataset.action === "toggle") toggleTask(taskId);
-  if (button.dataset.action === "edit" && task) openModal(task);
-  if (button.dataset.action === "delete") deleteTask(taskId);
+// Open/Close Modal
+openModalBtn.addEventListener('click', () => {
+    modalTitle.textContent = 'Create New Task';
+    taskForm.reset();
+    document.getElementById('task-id').value = '';
+    modalOverlay.classList.add('active');
 });
 
-openModalBtn.addEventListener("click", () => openModal());
-closeModalBtn.addEventListener("click", closeModal);
-taskForm.addEventListener("submit", saveTask);
-
-modalBackdrop.addEventListener("click", (event) => {
-  if (event.target === modalBackdrop) closeModal();
+closeModalBtn.addEventListener('click', () => {
+    modalOverlay.classList.remove('active');
 });
 
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && modalBackdrop.classList.contains("is-open")) {
-    closeModal();
-  }
+// Create or Update Task
+taskForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('task-id').value;
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+
+    let taskData = { title, description };
+    
+    try {
+        let response;
+        if (id) {
+            // Preserve completed status when updating
+            const existingTask = tasks.find(t => t._id === id);
+            taskData.completed = existingTask ? existingTask.completed : false;
+
+            // Update
+            response = await fetch(`/tasks/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskData)
+            });
+        } else {
+            // Create
+            response = await fetch('/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskData)
+            });
+        }
+
+        if (response.ok) {
+            modalOverlay.classList.remove('active');
+            fetchTasks();
+        }
+    } catch (error) {
+        console.error('Error saving task:', error);
+    }
 });
 
-loadTasks();
+// Toggle Task Completion
+async function toggleTask(id, currentStatus) {
+    try {
+        const task = tasks.find(t => t._id === id);
+        const response = await fetch(`/tasks/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                ...task,
+                completed: !currentStatus 
+            })
+        });
+
+        if (response.ok) {
+            fetchTasks();
+        }
+    } catch (error) {
+        console.error('Error toggling task:', error);
+    }
+}
+
+// Delete Task
+async function deleteTask(id) {
+    if (!confirm('Are you sure you want to delete this task?')) return;
+
+    try {
+        const response = await fetch(`/tasks/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            fetchTasks();
+        }
+    } catch (error) {
+        console.error('Error deleting task:', error);
+    }
+}
+
+// Edit Task (Pre-fill modal)
+function editTask(id) {
+    const task = tasks.find(t => t._id === id);
+    if (!task) return;
+
+    document.getElementById('task-id').value = task._id;
+    document.getElementById('title').value = task.title;
+    document.getElementById('description').value = task.description || '';
+    
+    modalTitle.textContent = 'Edit Task';
+    modalOverlay.classList.add('active');
+}
+
+// Close modal on click outside
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+        modalOverlay.classList.remove('active');
+    }
+});
